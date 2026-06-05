@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PATTERN RETRIEVAL — THE PRINCE</title>
+<style>
+body { margin:0; background:#000; color:#0f0; font-family:'Courier New', monospace; overflow:hidden; image-rendering:pixelated; }
+#ui { position:absolute; top:8px; left:12px; pointer-events:none; z-index:10; text-shadow:0 0 8px #0f0; }
+#hud { font-size:18px; line-height:1.1; }
+canvas { display:block; filter: contrast(1.2) brightness(1.1); }
+#start-screen, #game-over { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#0f0; text-align:center; z-index:20; font-size:22px; }
+button { background:#000; color:#0f0; border:2px solid #0f0; padding:12px 24px; font-family:inherit; cursor:pointer; margin:10px; box-shadow:0 0 10px #0f0; }
+button:hover { background:#0f0; color:#000; }
+#controls { position:absolute; bottom:12px; right:12px; z-index:15; }
+</style>
+</head>
+<body>
+<div id="ui">
+<div id="hud">
+PATTERN RETRIEVAL<br>
+LVL <span id="level">01</span> SCORE <span id="score">0</span><br>
+GOT <span id="collected">0</span> LIVES <span id="lives">3</span>
+</div>
+</div>
+
+<canvas id="game" width="960" height="540"></canvas>
+
+<div id="controls">
+<button onclick="toggleMusic()">🔊 MUSIC</button>
+</div>
+
+<div id="start-screen">
+<h1>// PATTERN RETRIEVAL — THE PRINCE</h1>
+<p>The dungeon is infinite.<br>94 ASCII specimens corrupted by noise.<br>Each level deeper — patterns more fractured.</p>
+<button onclick="startGame()">▸ ENTER THE DUNGEON CORRUPTED</button>
+</div>
+
+<div id="game-over" style="display:none;">
+<h1>// MEMORY LOST</h1>
+<p id="final-stats"></p>
+<button onclick="restartGame()">▸ RETRY SESSION</button>
+<button onclick="shareOnX()">▸ SHARE ON X</button>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
