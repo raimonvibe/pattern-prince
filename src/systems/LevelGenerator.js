@@ -38,20 +38,23 @@ export class LevelGenerator {
     const startX = index * GAME.CHUNK_WIDTH;
     const objects = { platforms: [], coins: [], enemies: [], hazards: [], chests: [] };
 
+    // Every chunk gets a full-width ground floor so gravity always has something to land on.
+    const ground = this.makeGroundFloor(startX, GAME.GROUND_Y, GAME.CHUNK_WIDTH, group);
+    objects.platforms.push(ground);
+
     if (index === 0) {
-      objects.platforms.push(this.makePlatform(startX, GAME.HEIGHT - 60, 280, 'stone', group));
-      this.lastPlatform = { x: startX + 40, y: GAME.HEIGHT - 60, w: 280, h: 20 };
+      this.lastPlatform = { x: startX, y: GAME.GROUND_Y, w: GAME.CHUNK_WIDTH, h: GAME.GROUND_HEIGHT };
     }
 
-    let x = Math.max(this.lastPlatform.x + this.lastPlatform.w, startX + 40);
+    let x = startX + 80;
     const endX = startX + GAME.CHUNK_WIDTH - 40;
     const count = 4 + Math.floor(difficulty * 0.8);
 
     for (let i = 0; i < count && x < endX; i++) {
       const gap = Phaser.Math.Between(40, this.maxJumpW - 20);
       const px = x + gap;
-      const minY = GAME.HEIGHT - 180;
-      const maxY = GAME.HEIGHT - 70;
+      const minY = GAME.GROUND_Y - 180;
+      const maxY = GAME.GROUND_Y - 70;
       const prevY = this.lastPlatform.y;
       let py = Phaser.Math.Clamp(
         prevY + Phaser.Math.Between(-this.maxJumpH + 20, 40),
@@ -85,11 +88,25 @@ export class LevelGenerator {
 
     if (this.rng.frac() < 0.15 + difficulty * 0.02) {
       const fx = startX + Phaser.Math.Between(80, GAME.CHUNK_WIDTH - 80);
-      objects.hazards.push(this.scene.spawnHazard?.(fx, GAME.HEIGHT - 52, 'fire', group));
+      objects.hazards.push(this.scene.spawnHazard?.(fx, GAME.GROUND_Y - 12, 'fire', group));
     }
 
     this.chunks.set(index, { group, objects, destroy: () => group.clear(true, true) });
     this.lastX = Math.max(this.lastX, x);
+  }
+
+  makeGroundFloor(x, y, w, group) {
+    const sprite = this.scene.add.image(x, y, 'platform-stone');
+    sprite.setOrigin(0, 0);
+    sprite.setDisplaySize(w, GAME.GROUND_HEIGHT);
+    sprite.setTint(0x888899);
+    this.scene.physics.add.existing(sprite, true);
+    sprite.body.setSize(w, GAME.GROUND_HEIGHT);
+    sprite.refreshBody();
+    sprite.isGround = true;
+    sprite.platformType = 'ground';
+    group.add(sprite);
+    return sprite;
   }
 
   makePlatform(x, y, w, type, group) {

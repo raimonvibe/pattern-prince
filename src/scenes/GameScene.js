@@ -44,7 +44,7 @@ export class GameScene extends Phaser.Scene {
     this.bgLayer = this.add.graphics().setDepth(-10);
     this.lightLayer = this.add.graphics().setDepth(5);
 
-    this.player = new Prince(this, 120, GAME.HEIGHT - 100);
+    this.player = new Prince(this, 120, GAME.GROUND_Y - 40);
     this.physics.add.collider(this.player, this.platformGroup);
     this.physics.add.collider(this.enemyManager.group, this.platformGroup);
     this.physics.add.collider(this.hazardGroup, this.platformGroup);
@@ -60,7 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.levelGen.reset();
     this.syncPlatforms();
     this.physics.world.once('worldstep', () => {
-      this.player.setPosition(120, GAME.HEIGHT - 100);
+      this.player.setPosition(120, GAME.GROUND_Y - 40);
       this.player.body.setVelocity(0, 0);
     });
 

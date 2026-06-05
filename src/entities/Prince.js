@@ -17,6 +17,8 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     this.invuln = 0;
     this.dead = false;
     this.damageFlash = 0;
+    this.lastGroundTime = 0;
+    this.coyoteMs = 120;
     this.play('prince-idle');
     this.healthBar = scene.add.graphics().setDepth(20);
   }
@@ -45,9 +47,13 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     this.body.setVelocityX(vx);
     this.setFlipX(this.facing < 0);
 
-    if (input.jump && this.body.blocked.down) {
+    if (input.jump && this.canJump()) {
       this.body.setVelocityY(GAME.JUMP_VELOCITY);
       this.scene.audio?.playJump();
+    }
+
+    if (this.body.blocked.down) {
+      this.lastGroundTime = this.scene.time.now;
     }
 
     if (input.dash && this.dashCooldown <= 0 && this.scene.powerups?.useDashCharge()) {
@@ -70,6 +76,10 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.drawHealthBar();
+  }
+
+  canJump() {
+    return this.body.blocked.down || (this.scene.time.now - this.lastGroundTime < this.coyoteMs);
   }
 
   startDash() {

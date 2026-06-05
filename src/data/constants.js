@@ -13,6 +13,8 @@ export const GAME = {
   CHUNK_WIDTH: 640,
   CHUNKS_AHEAD: 3,
   CHUNKS_BEHIND: 1,
+  GROUND_HEIGHT: 48,
+  GROUND_Y: 540 - 48, // surface top of ground floor (HEIGHT - GROUND_HEIGHT)
 };
 
 export const COINS = {
