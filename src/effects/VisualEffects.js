@@ -1,4 +1,5 @@
 import { GAME } from '../data/constants.js';
+import { getLayout } from '../ui/UILayout.js';
 
 export class VisualEffects {
   constructor(scene) {
@@ -22,9 +23,9 @@ export class VisualEffects {
   drawOverlays() {
     const w = GAME.WIDTH;
     const h = GAME.HEIGHT;
-    const mobile = this.scene.scale.displaySize.height > this.scene.scale.displaySize.width;
-    const bottomInset = mobile ? 100 : 40;
-    const topInset = mobile ? 56 : 40;
+    const L = getLayout(this.scene);
+    const bottomInset = L.mobile ? L.bottomReserve + 8 : 40;
+    const topInset = L.mobile ? L.topBarHeight + 4 : 40;
 
     this.scanlines.clear();
     this.scanlines.fillStyle(0x000000, 0.15);

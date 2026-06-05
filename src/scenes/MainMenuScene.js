@@ -98,10 +98,10 @@ export class MainMenuScene extends Phaser.Scene {
     this.prince.setPosition(cx, mobile ? 168 : 260);
     this.prince.setScale(mobile ? 1.5 : 2);
 
-    const btnW = mobile ? L.w - L.pad * 2 : 280;
-    const btnH = mobile ? 44 : 48;
-    const btnFs = mobile ? 15 : 18;
-    const startY = mobile ? 248 : 320;
+    const btnW = L.btn.width;
+    const btnH = L.btn.height;
+    const btnFs = L.btn.fontSize;
+    const startY = mobile ? (L.portrait ? 240 : 260) : 320;
     const musicY = mobile ? startY + btnH + 12 : 390;
 
     this.startBtnBg.setSize(btnW, btnH).setPosition(cx, startY);

@@ -1,11 +1,12 @@
 import { GAME } from '../data/constants.js';
 
 export class LevelGenerator {
-  constructor(scene) {
+  constructor(scene, world, spawner) {
     this.scene = scene;
+    this.world = world;
+    this.spawner = spawner;
     this.chunks = new Map();
-    this.lastX = 0;
-    this.lastPlatform = { x: 0, y: GAME.GROUND_Y, w: 200, h: 20 };
+    this.lastPlatform = { x: 0, y: GAME.GROUND_Y, w: GAME.CHUNK_WIDTH, h: GAME.GROUND_HEIGHT };
     this.rng = Phaser.Math.RND;
     this.maxJumpH = 140;
     this.maxJumpW = 220;
@@ -13,7 +14,6 @@ export class LevelGenerator {
 
   reset() {
     this.chunks.clear();
-    this.lastX = 0;
     this.lastPlatform = { x: 0, y: GAME.GROUND_Y, w: GAME.CHUNK_WIDTH, h: GAME.GROUND_HEIGHT };
     this.spawnChunk(0);
   }
@@ -26,7 +26,7 @@ export class LevelGenerator {
     [...this.chunks.keys()].forEach((k) => {
       if (k < chunkIdx - GAME.CHUNKS_BEHIND - 1 || k > chunkIdx + GAME.CHUNKS_AHEAD + 1) {
         const chunk = this.chunks.get(k);
-        chunk?.objects.platforms.forEach((p) => this.scene.events.emit('platform-removed', p));
+        chunk?.objects.platforms.forEach((p) => this.world.remove(p));
         chunk?.destroy();
         this.chunks.delete(k);
       }
@@ -38,7 +38,7 @@ export class LevelGenerator {
     const startX = index * GAME.CHUNK_WIDTH;
     const objects = { platforms: [], coins: [], enemies: [], hazards: [], chests: [] };
 
-    const ground = this.makeGroundFloor(startX, GAME.GROUND_Y, GAME.CHUNK_WIDTH);
+    const ground = this.world.createGround(startX, GAME.GROUND_Y, GAME.CHUNK_WIDTH);
     objects.platforms.push(ground);
     group.add(ground);
 
@@ -66,21 +66,21 @@ export class LevelGenerator {
       const types = ['stone', 'stone', 'crystal', 'corrupted', 'moving', 'disappearing'];
       const type = types[Phaser.Math.Between(0, Math.min(types.length - 1, 1 + Math.floor(difficulty / 3)))];
 
-      const plat = this.makePlatform(px, py, pw, type);
+      const plat = this.world.createPlatform(px, py, pw, type);
       objects.platforms.push(plat);
       group.add(plat);
 
       if (this.rng.frac() < 0.55 + difficulty * 0.02) {
-        objects.coins.push(this.scene.spawnCoin?.(px + pw * 0.5, py - 30, this.pickCoinType(difficulty), group));
+        objects.coins.push(this.spawner.spawnCoin(px + pw * 0.5, py - 30, this.pickCoinType(difficulty)));
       }
       if (this.rng.frac() < 0.12 + difficulty * 0.015) {
-        objects.enemies.push(this.scene.spawnEnemy?.(px + pw * 0.5, py - 24, this.pickEnemyType(difficulty), group));
+        objects.enemies.push(this.spawner.spawnEnemy(px + pw * 0.5, py - 24, this.pickEnemyType(difficulty)));
       }
       if (this.rng.frac() < 0.08 + difficulty * 0.01) {
-        objects.hazards.push(this.scene.spawnHazard?.(px + Phaser.Math.Between(20, pw - 40), py - 8, this.pickHazardType(difficulty), group));
+        objects.hazards.push(this.spawner.spawnHazard(px + Phaser.Math.Between(20, pw - 40), py - 8, this.pickHazardType(difficulty)));
       }
       if (this.rng.frac() < 0.04 + difficulty * 0.005) {
-        objects.chests.push(this.scene.spawnChest?.(px + pw - 30, py - 28, group));
+        objects.chests.push(this.spawner.spawnChest(px + pw - 30, py - 28));
       }
 
       this.lastPlatform = { x: px, y: py, w: pw, h: 20 };
@@ -89,46 +89,16 @@ export class LevelGenerator {
 
     if (this.rng.frac() < 0.15 + difficulty * 0.02) {
       const fx = startX + Phaser.Math.Between(80, GAME.CHUNK_WIDTH - 80);
-      objects.hazards.push(this.scene.spawnHazard?.(fx, GAME.GROUND_Y - 12, 'fire', group));
+      objects.hazards.push(this.spawner.spawnHazard(fx, GAME.GROUND_Y - 12, 'fire'));
     }
 
     this.chunks.set(index, {
       group,
       objects,
-      destroy: () => {
-        group.getChildren().forEach((child) => {
-          if (!child?.isGround && !objects.platforms.includes(child)) child.destroy();
-        });
-      },
+      destroy: () => group.getChildren().forEach((c) => {
+        if (!objects.platforms.includes(c)) c.destroy();
+      }),
     });
-    this.lastX = Math.max(this.lastX, x);
-  }
-
-  makeGroundFloor(x, y, w) {
-    const cx = x + w / 2;
-    const cy = y + GAME.GROUND_HEIGHT / 2;
-    const sprite = this.scene.platformGroup.create(cx, cy, 'platform-stone');
-    sprite.setDisplaySize(w, GAME.GROUND_HEIGHT);
-    sprite.setTint(0x888899);
-    sprite.refreshBody();
-    sprite.isGround = true;
-    sprite.platformType = 'ground';
-    sprite.setDepth(1);
-    return sprite;
-  }
-
-  makePlatform(x, y, w, type) {
-    const cx = x + w / 2;
-    const cy = y + 10;
-    const sprite = this.scene.platformGroup.create(cx, cy, `platform-${type}`);
-    sprite.setDisplaySize(w, 20);
-    sprite.refreshBody();
-    sprite.platformType = type;
-    sprite.startX = cx;
-    sprite.moveRange = type === 'moving' ? 60 : 0;
-    sprite.disappearTimer = type === 'disappearing' ? 0 : null;
-    sprite.setDepth(2);
-    return sprite;
   }
 
   pickCoinType(d) {
@@ -160,7 +130,10 @@ export class LevelGenerator {
         }
         if (p.disappearTimer !== null) {
           p.disappearTimer += delta;
-          if (p.disappearTimer > 2000) p.setAlpha(0.3 + Math.abs(Math.sin(p.disappearTimer / 200)) * 0.4);
+          if (p.disappearTimer > 2000) {
+            p.setAlpha(0.3 + Math.abs(Math.sin(p.disappearTimer / 200)) * 0.4);
+            if (p.disappearTimer > 3500) p.body.checkCollision.none = true;
+          }
         }
       });
     });

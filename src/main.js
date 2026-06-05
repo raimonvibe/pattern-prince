@@ -4,12 +4,17 @@ import { gameConfig } from './config/gameConfig.js';
 const game = new Phaser.Game(gameConfig);
 
 let resizeTimer;
-const onResize = () => {
+const refreshScale = () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     if (game.scale) game.scale.refresh();
-  }, 100);
+  }, 80);
 };
 
-window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', onResize);
+window.addEventListener('resize', refreshScale);
+window.addEventListener('orientationchange', () => setTimeout(refreshScale, 150));
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', refreshScale);
+  window.visualViewport.addEventListener('scroll', refreshScale);
+}

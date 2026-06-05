@@ -6,52 +6,57 @@ export class MobileControls {
     this.input = { left: false, right: false };
     this.jumpPulse = false;
     this.dashPulse = false;
-    this.visible = false;
     this.buttons = [];
     this.container = scene.add.container(0, 0).setScrollFactor(0).setDepth(850);
 
-    if (!isMobileView(scene)) return;
-
     this.buildControls();
+    this.updateVisibility();
     this.layout();
-    this.visible = true;
   }
 
   buildControls() {
     const defs = [
-      { label: '◀', key: 'left' },
-      { label: '▶', key: 'right' },
-      { label: '⚡', key: 'dash' },
-      { label: '▲', key: 'jump' },
+      { label: '◀', key: 'left', aria: 'Move left' },
+      { label: '▶', key: 'right', aria: 'Move right' },
+      { label: '⚡', key: 'dash', aria: 'Dash' },
+      { label: '▲', key: 'jump', aria: 'Jump' },
     ];
 
     defs.forEach(({ label, key }) => {
-      const bg = this.scene.add.circle(0, 0, 28, 0x001100, 0.55).setStrokeStyle(2, 0x00ff88);
+      const bg = this.scene.add.circle(0, 0, 28, 0x001100, 0.6).setStrokeStyle(2, 0x00ff88);
       const txt = this.scene.add.text(0, 0, label, { fontSize: '20px', color: '#00ff88' }).setOrigin(0.5);
       bg.setInteractive({ useHandCursor: true });
-      bg.controlKey = key;
+      txt.setInteractive({ useHandCursor: true });
 
-      const press = () => {
+      const press = (pointer) => {
+        pointer.event?.stopPropagation?.();
         if (key === 'jump') this.jumpPulse = true;
         else if (key === 'dash') this.dashPulse = true;
         else this.input[key] = true;
-        bg.setFillStyle(0x00ff88, 0.8);
+        bg.setFillStyle(0x00ff88, 0.85);
         txt.setColor('#001100');
         this.scene.scene.get('GameScene')?.audio?.unlock?.();
       };
       const release = () => {
         if (key === 'left' || key === 'right') this.input[key] = false;
-        bg.setFillStyle(0x001100, 0.55);
+        bg.setFillStyle(0x001100, 0.6);
         txt.setColor('#00ff88');
       };
 
-      bg.on('pointerdown', press);
-      bg.on('pointerup', release);
-      bg.on('pointerout', release);
+      [bg, txt].forEach((el) => {
+        el.on('pointerdown', press);
+        el.on('pointerup', release);
+        el.on('pointerout', release);
+      });
 
       this.container.add([bg, txt]);
       this.buttons.push({ bg, txt, key });
     });
+  }
+
+  updateVisibility() {
+    this.visible = isMobileView(this.scene);
+    this.container.setVisible(this.visible);
   }
 
   layout() {
@@ -64,9 +69,9 @@ export class MobileControls {
     const dashDef = L.controls.right[0];
     const jumpDef = L.controls.right[1];
 
-    this.placeButton(leftBtn, l1.x, l1.y, l1.size);
-    this.placeButton(rightBtn, l2.x, l2.y, l2.size);
-    this.placeButton(dashBtn, dashDef.x, dashDef.y, dashDef.size, '16px');
+    this.placeButton(leftBtn, l1.x, l1.y, l1.size, '18px');
+    this.placeButton(rightBtn, l2.x, l2.y, l2.size, '18px');
+    this.placeButton(dashBtn, dashDef.x, dashDef.y, dashDef.size, '15px');
     this.placeButton(jumpBtn, jumpDef.x, jumpDef.y, jumpDef.size, '22px');
   }
 

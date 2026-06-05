@@ -20,7 +20,8 @@ export class UIScene extends Phaser.Scene {
 
   applyLayout() {
     if (!this.sys?.isActive() || !this.hud) return;
-    this.hud?.layout();
+    this.mobile?.updateVisibility();
+    this.hud.layout();
     this.mobile?.layout();
   }
 
@@ -42,6 +43,8 @@ export class UIScene extends Phaser.Scene {
 
     if (this.mobile?.visible) {
       this.registry.set('mobileInput', this.mobile.getInput());
+    } else {
+      this.registry.set('mobileInput', { left: false, right: false, jump: false, dash: false });
     }
   }
 

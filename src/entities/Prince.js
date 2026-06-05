@@ -6,8 +6,12 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setCollideWorldBounds(false);
+    this.setScale(2);
+    this.setDepth(20);
+    this.setDragX(600);
+    this.setMaxVelocity(320, 700);
     this.body.setSize(18, 26).setOffset(7, 4);
-    this.setDepth(10);
+
     this.hp = GAME.MAX_HP;
     this.maxHp = GAME.MAX_HP;
     this.facing = 1;
@@ -19,10 +23,12 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     this.damageFlash = 0;
     this.lastGroundTime = 0;
     this.coyoteMs = 120;
+    this.jumpBuffer = false;
     this.play('prince-idle');
-    this.setScale(2);
-    this.setDepth(20);
-    this.healthBar = scene.add.graphics().setDepth(25);
+  }
+
+  preUpdate(time, delta) {
+    super.preUpdate(time, delta);
   }
 
   update(input, delta) {
@@ -39,32 +45,33 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
         this.dashing = false;
         this.body.setAllowGravity(true);
       }
-      this.drawHealthBar();
       return;
     }
 
-    let vx = 0;
-    if (input.left) { vx = -GAME.PLAYER_SPEED; this.facing = -1; }
-    if (input.right) { vx = GAME.PLAYER_SPEED; this.facing = 1; }
-    this.body.setVelocityX(vx);
+    if (input.left) { this.facing = -1; this.setVelocityX(-GAME.PLAYER_SPEED); }
+    else if (input.right) { this.facing = 1; this.setVelocityX(GAME.PLAYER_SPEED); }
+    else { this.setVelocityX(0); }
     this.setFlipX(this.facing < 0);
 
-    if (input.jump && this.canJump()) {
-      this.body.setVelocityY(GAME.JUMP_VELOCITY);
+    if (input.jump) this.jumpBuffer = true;
+
+    const onGround = this.body.blocked.down;
+    if (onGround) this.lastGroundTime = this.scene.time.now;
+
+    if (this.jumpBuffer && this.canJump()) {
+      this.setVelocityY(GAME.JUMP_VELOCITY);
+      this.jumpBuffer = false;
       this.scene.audio?.playJump();
     }
-
-    if (this.body.blocked.down) {
-      this.lastGroundTime = this.scene.time.now;
-    }
+    if (!input.jump) this.jumpBuffer = false;
 
     if (input.dash && this.dashCooldown <= 0 && this.scene.powerups?.useDashCharge()) {
       this.startDash();
     }
 
-    if (!this.body.blocked.down) {
+    if (!onGround) {
       this.anims.play(this.body.velocity.y < 0 ? 'prince-jump' : 'prince-fall', true);
-    } else if (vx !== 0) {
+    } else if (this.body.velocity.x !== 0) {
       this.anims.play('prince-run', true);
     } else {
       this.anims.play('prince-idle', true);
@@ -76,8 +83,6 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.clearTint();
     }
-
-    this.drawHealthBar();
   }
 
   canJump() {
@@ -117,24 +122,5 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     this.body.setAllowGravity(false);
     this.scene.audio?.playDeath();
     this.scene.time.delayedCall(1200, () => this.scene.onPlayerDeath());
-  }
-
-  drawHealthBar() {
-    const g = this.healthBar;
-    g.clear();
-    const bx = this.x - 20;
-    const by = this.y - 28;
-    const pct = this.hp / this.maxHp;
-    g.fillStyle(0x000000, 0.6);
-    g.fillRect(bx - 1, by - 1, 42, 8);
-    g.fillStyle(0xff0044, 1);
-    g.fillRect(bx, by, 40, 6);
-    g.fillStyle(0x00ff88, 1);
-    g.fillRect(bx, by, 40 * pct, 6);
-  }
-
-  destroy(fromScene) {
-    this.healthBar?.destroy();
-    super.destroy(fromScene);
   }
 }

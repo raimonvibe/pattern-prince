@@ -31,6 +31,8 @@ export function openChest(scene, chest) {
     case 'shield':
     case 'double':
     case 'dash':
+    case 'freeze':
+    case 'magnet':
       scene.powerups.activate(reward === 'double' ? 'double' : reward);
       break;
     case 'artifact':

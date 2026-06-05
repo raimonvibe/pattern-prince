@@ -51,5 +51,7 @@ export const CHEST_REWARDS = [
   'shield',
   'double',
   'dash',
+  'freeze',
+  'magnet',
   'artifact',
 ];
