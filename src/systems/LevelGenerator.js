@@ -25,7 +25,9 @@ export class LevelGenerator {
     }
     [...this.chunks.keys()].forEach((k) => {
       if (k < chunkIdx - GAME.CHUNKS_BEHIND - 1 || k > chunkIdx + GAME.CHUNKS_AHEAD + 1) {
-        this.chunks.get(k)?.destroy();
+        const chunk = this.chunks.get(k);
+        chunk?.objects.platforms.forEach((p) => this.scene.events.emit('platform-removed', p));
+        chunk?.destroy();
         this.chunks.delete(k);
       }
     });
@@ -91,10 +93,12 @@ export class LevelGenerator {
   }
 
   makePlatform(x, y, w, type, group) {
-    const sprite = this.scene.add.image(x + w / 2, y + 10, `platform-${type}`).setOrigin(0.5);
+    const sprite = this.scene.add.image(x, y, `platform-${type}`);
+    sprite.setOrigin(0, 0);
     sprite.setDisplaySize(w, 20);
     this.scene.physics.add.existing(sprite, true);
-    sprite.body.setSize(w - 4, 12).setOffset(-w / 2 + 2, -2);
+    sprite.body.setSize(w, 20);
+    sprite.refreshBody();
     sprite.platformType = type;
     sprite.startX = x + w / 2;
     sprite.moveRange = type === 'moving' ? 60 : 0;
@@ -126,7 +130,7 @@ export class LevelGenerator {
     this.chunks.forEach(({ objects }) => {
       objects.platforms.forEach((p) => {
         if (p.moveRange) {
-          p.x = p.startX + Math.sin(time / 500) * p.moveRange;
+          p.x = p.startX - p.displayWidth / 2 + Math.sin(time / 500) * p.moveRange;
           p.body.updateFromGameObject();
         }
         if (p.disappearTimer !== null) {

@@ -44,8 +44,10 @@ export class GameScene extends Phaser.Scene {
     this.bgLayer = this.add.graphics().setDepth(-10);
     this.lightLayer = this.add.graphics().setDepth(5);
 
-    this.player = new Prince(this, 120, GAME.HEIGHT - 140);
+    this.player = new Prince(this, 120, GAME.HEIGHT - 100);
     this.physics.add.collider(this.player, this.platformGroup);
+    this.physics.add.collider(this.enemyManager.group, this.platformGroup);
+    this.physics.add.collider(this.hazardGroup, this.platformGroup);
     this.physics.add.overlap(this.player, this.coinGroup, (_, coin) => collectCoin(this, coin));
     this.physics.add.overlap(this.player, this.chestGroup, (_, chest) => openChest(this, chest));
     this.physics.add.overlap(this.player, this.hazardGroup, (_, h) => hitHazard(this, h));
@@ -57,6 +59,15 @@ export class GameScene extends Phaser.Scene {
 
     this.levelGen.reset();
     this.syncPlatforms();
+    this.physics.world.once('worldstep', () => {
+      this.player.setPosition(120, GAME.HEIGHT - 100);
+      this.player.body.setVelocity(0, 0);
+    });
+
+    this.events.on('platform-removed', (platform) => {
+      this.syncedPlatforms.delete(platform);
+      if (platform?.body) this.platformGroup.remove(platform, false, false);
+    });
 
     this.cameras.main.startFollow(this.player, true, 0.12, 0.08);
     this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, GAME.HEIGHT);
@@ -149,7 +160,7 @@ export class GameScene extends Phaser.Scene {
     const unlocked = this.achievements.evaluate(this.stats);
     if (unlocked.length) this.registry.set('newAchievements', unlocked);
 
-    if (this.player.y > GAME.HEIGHT + 80) this.player.takeDamage(100);
+    if (this.player.y > GAME.HEIGHT + 40) this.player.takeDamage(100);
   }
 
   drawBackground() {

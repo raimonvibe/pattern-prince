@@ -18,6 +18,11 @@ export class EnemyManager {
     enemy.patrolMax = x + 80;
     enemy.chargeCooldown = 0;
     enemy.play(`enemy-${type}`);
+
+    if (type === 'ghost') {
+      enemy.body.setAllowGravity(false);
+    }
+
     return enemy;
   }
 
@@ -29,6 +34,7 @@ export class EnemyManager {
         enemy.y += Math.sin(this.scene.time.now / 400) * 0.4;
         enemy.x += enemy.speed * 0.016 * speedMult * (enemy.flipX ? -1 : 1);
         if (enemy.x <= enemy.patrolMin || enemy.x >= enemy.patrolMax) enemy.flipX = !enemy.flipX;
+        enemy.body.updateFromGameObject();
       } else if (enemy.enemyType === 'knight') {
         enemy.x += enemy.speed * 0.018 * speedMult * (enemy.flipX ? -1 : 1);
         if (enemy.x <= enemy.patrolMin || enemy.x >= enemy.patrolMax) enemy.flipX = !enemy.flipX;
