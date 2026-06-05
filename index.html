@@ -1,183 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<title>PATTERN RETRIEVAL — THE PRINCE</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  height: 100%;
-  background: #000;
-  color: #0f0;
-  font-family: 'Courier New', monospace;
-  overflow: hidden;
-  touch-action: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-#game-wrap {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: 100vw;
-  max-height: 100dvh;
-  object-fit: contain;
-  image-rendering: pixelated;
-  filter: contrast(1.2) brightness(1.1);
-}
-#ui {
-  position: fixed;
-  top: max(8px, env(safe-area-inset-top));
-  left: max(12px, env(safe-area-inset-left));
-  pointer-events: none;
-  z-index: 10;
-  text-shadow: 0 0 8px #0f0;
-}
-#hud { font-size: clamp(12px, 3.5vw, 18px); line-height: 1.2; }
-#start-screen, #game-over {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.95);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #0f0;
-  text-align: center;
-  z-index: 20;
-  font-size: clamp(14px, 4vw, 22px);
-  padding: 24px;
-  padding-top: max(24px, env(safe-area-inset-top));
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
-}
-#start-screen h1, #game-over h1 { font-size: clamp(16px, 5vw, 28px); margin: 0 0 12px; }
-#start-screen p { max-width: 32em; line-height: 1.4; margin: 0 0 20px; }
-button {
-  background: #000;
-  color: #0f0;
-  border: 2px solid #0f0;
-  padding: 12px 24px;
-  font-family: inherit;
-  font-size: clamp(14px, 3.5vw, 18px);
-  cursor: pointer;
-  margin: 8px;
-  box-shadow: 0 0 10px #0f0;
-  touch-action: manipulation;
-  min-height: 48px;
-  min-width: 48px;
-}
-button:hover { background: #0f0; color: #000; }
-#controls {
-  position: fixed;
-  top: max(8px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
-  z-index: 15;
-}
-#touch-controls {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 12;
-  display: none;
-}
-#touch-controls.active { display: block; }
-.touch-cluster {
-  position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  display: flex;
-  gap: 10px;
-  pointer-events: auto;
-}
-.touch-cluster.left { left: max(16px, env(safe-area-inset-left)); }
-.touch-cluster.right { right: max(16px, env(safe-area-inset-right)); align-items: flex-end; }
-.touch-btn {
-  width: clamp(56px, 16vw, 72px);
-  height: clamp(56px, 16vw, 72px);
-  border-radius: 50%;
-  padding: 0;
-  margin: 0;
-  font-size: clamp(18px, 5vw, 24px);
-  line-height: 1;
-  opacity: 0.85;
-  background: rgba(0,0,0,0.55);
-}
-.touch-btn:active, .touch-btn.pressed {
-  background: #0f0;
-  color: #000;
-  opacity: 1;
-}
-.touch-btn-lg {
-  width: clamp(64px, 18vw, 80px);
-  height: clamp(64px, 18vw, 80px);
-}
-.touch-btn-sm {
-  width: clamp(48px, 13vw, 60px);
-  height: clamp(48px, 13vw, 60px);
-  font-size: clamp(14px, 4vw, 18px);
-}
-@media (hover: hover) and (pointer: fine) and (min-width: 901px) {
-  #touch-controls.active { display: none; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Pattern Prince — premium retro arcade dungeon runner">
+  <title>Pattern Prince</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+    #game-container {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+  </style>
 </head>
 <body>
-<div id="game-wrap">
-  <canvas id="game" width="960" height="540"></canvas>
-</div>
-
-<div id="ui">
-  <div id="hud">
-    PATTERN RETRIEVAL<br>
-    LVL <span id="level">01</span> SCORE <span id="score">0</span><br>
-    GOT <span id="collected">0</span> LIVES <span id="lives">3</span>
-  </div>
-</div>
-
-<div id="controls">
-  <button type="button" onclick="toggleMusic()">MUSIC</button>
-</div>
-
-<div id="touch-controls">
-  <div class="touch-cluster left">
-    <button type="button" class="touch-btn" data-touch="left" aria-label="Move left">◀</button>
-    <button type="button" class="touch-btn" data-touch="right" aria-label="Move right">▶</button>
-  </div>
-  <div class="touch-cluster right">
-    <button type="button" class="touch-btn touch-btn-sm" data-touch="roll" aria-label="Roll">▼</button>
-    <button type="button" class="touch-btn" data-touch="attack" aria-label="Attack">Z</button>
-    <button type="button" class="touch-btn touch-btn-lg" data-touch="jump" aria-label="Jump">▲</button>
-  </div>
-</div>
-
-<div id="start-screen">
-  <h1>// PATTERN RETRIEVAL — THE PRINCE</h1>
-  <p>The dungeon is infinite.<br>94 ASCII specimens corrupted by noise.<br>Each level deeper — patterns more fractured.</p>
-  <p style="font-size:0.85em;opacity:0.85;">Tap to play on phone.<br>Arrows / WASD + Space + Z on keyboard.</p>
-  <button type="button" onclick="startGame()">ENTER THE DUNGEON</button>
-</div>
-
-<div id="game-over" style="display:none;">
-  <h1>// MEMORY LOST</h1>
-  <p id="final-stats"></p>
-  <button type="button" onclick="restartGame()">RETRY SESSION</button>
-  <button type="button" onclick="shareOnX()">SHARE ON X</button>
-</div>
-
-<script src="game.js"></script>
+  <div id="game-container"></div>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
