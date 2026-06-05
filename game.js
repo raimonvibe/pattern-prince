@@ -10,6 +10,7 @@ const player = { x: 80, y: 300, w: 28, h: 42, vx: 0, vy: 0, speed: 5.5, jump: -1
 
 let platforms = [], enemies = [], spikes = [], specimens = [], door = {x:0, y:0, w:40, h:60};
 const keys = {};
+const touch = { left: false, right: false, jump: false, attack: false, roll: false };
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let musicInterval = null;
@@ -43,9 +44,47 @@ if (note % 8 === 0) clearInterval(musicInterval); // restart faster
 }
 
 function toggleMusic() {
+unlockAudio();
 musicPlaying = !musicPlaying;
 if (!musicPlaying && musicInterval) clearInterval(musicInterval);
 else if (started) startBackgroundMusic();
+}
+
+function unlockAudio() {
+if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function setTouchControlsVisible(visible) {
+const el = document.getElementById('touch-controls');
+if (el) el.classList.toggle('active', visible);
+}
+
+function initTouchControls() {
+document.querySelectorAll('[data-touch]').forEach(btn => {
+const action = btn.dataset.touch;
+const press = e => {
+e.preventDefault();
+touch[action] = true;
+btn.classList.add('pressed');
+unlockAudio();
+};
+const release = e => {
+e.preventDefault();
+touch[action] = false;
+btn.classList.remove('pressed');
+};
+btn.addEventListener('touchstart', press, { passive: false });
+btn.addEventListener('touchend', release, { passive: false });
+btn.addEventListener('touchcancel', release, { passive: false });
+btn.addEventListener('mousedown', press);
+btn.addEventListener('mouseup', release);
+btn.addEventListener('mouseleave', release);
+});
+['touchmove', 'touchstart'].forEach(evt => {
+document.body.addEventListener(evt, e => {
+if (started && !gameOver) e.preventDefault();
+}, { passive: false });
+});
 }
 
 // Specific Game Sounds
@@ -88,7 +127,9 @@ door.x = W - 120; door.y = H - 160;
 }
 
 function startGame() {
+unlockAudio();
 document.getElementById('start-screen').style.display = 'none';
+setTouchControlsVisible(true);
 started = true;
 level = 1; score = 0; collected = 0; lives = 3; gameOver = false;
 generateLevel();
@@ -99,6 +140,7 @@ loop();
 
 function restartGame() {
 document.getElementById('game-over').style.display = 'none';
+setTouchControlsVisible(true);
 startGame();
 }
 
@@ -123,23 +165,25 @@ if (player.rolling) player.rollTime--;
 if (player.attacking) player.attackTime--;
 
 player.vx = 0;
-if (keys['ArrowLeft'] || keys['a']) { player.vx = -player.speed; player.facing = -1; }
-if (keys['ArrowRight'] || keys['d']) { player.vx = player.speed; player.facing = 1; }
+if (keys['ArrowLeft'] || keys['a'] || touch.left) { player.vx = -player.speed; player.facing = -1; }
+if (keys['ArrowRight'] || keys['d'] || touch.right) { player.vx = player.speed; player.facing = 1; }
 
-if ((keys['ArrowDown'] || keys['s']) && player.grounded && !player.rolling) {
+if ((keys['ArrowDown'] || keys['s'] || touch.roll) && player.grounded && !player.rolling) {
 player.rolling = true; player.rollTime = 18; player.vx *= 2.2;
 rollSound();
 }
 
-if ((keys[' '] || keys['ArrowUp']) && player.grounded) {
+if ((keys[' '] || keys['ArrowUp'] || touch.jump) && player.grounded) {
 player.vy = player.jump;
 player.grounded = false;
 jumpSound();
+touch.jump = false;
 }
 
-if (keys['z'] && !player.attacking) {
+if ((keys['z'] || touch.attack) && !player.attacking) {
 player.attacking = true; player.attackTime = 12;
 attackSound();
+touch.attack = false;
 }
 
 player.vy += 0.85;
@@ -216,6 +260,8 @@ localStorage.setItem('prHighScore', highScore);
 }
 document.getElementById('final-stats').innerHTML = `FINAL SCORE ${score}<br>LEVEL ${level}<br>HIGH ${highScore}`;
 document.getElementById('game-over').style.display = 'flex';
+setTouchControlsVisible(false);
+Object.keys(touch).forEach(k => { touch[k] = false; });
 if (musicInterval) clearInterval(musicInterval);
 } else {
 player.x = 80; player.y = 200; player.vx = player.vy = 0;
@@ -270,4 +316,5 @@ ctx.fillRect(Math.random()*W, Math.random()*H*0.6, 120, 40);
 }
 }
 
+initTouchControls();
 loop();
