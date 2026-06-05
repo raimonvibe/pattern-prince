@@ -19,6 +19,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   applyLayout() {
+    if (!this.sys?.isActive() || !this.hud) return;
     this.hud?.layout();
     this.mobile?.layout();
   }

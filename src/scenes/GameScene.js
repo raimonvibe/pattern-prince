@@ -37,14 +37,20 @@ export class GameScene extends Phaser.Scene {
 
     this.coinGroup = this.physics.add.group();
     this.chestGroup = this.physics.add.group();
-    this.syncedPlatforms = new Set();
     this.hazardGroup = this.physics.add.group();
     this.platformGroup = this.physics.add.staticGroup();
 
     this.bgLayer = this.add.graphics().setDepth(-10);
     this.lightLayer = this.add.graphics().setDepth(5);
 
-    this.player = new Prince(this, 120, GAME.GROUND_Y - 40);
+    this.events.on('platform-removed', (platform) => {
+      if (platform?.active) this.platformGroup.remove(platform, true, true);
+    });
+
+    this.levelGen.reset();
+
+    this.player = new Prince(this, 120, GAME.GROUND_Y - 36);
+    this.player.setDepth(20);
     this.physics.add.collider(this.player, this.platformGroup);
     this.physics.add.collider(this.enemyManager.group, this.platformGroup);
     this.physics.add.collider(this.hazardGroup, this.platformGroup);
@@ -57,16 +63,12 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    this.levelGen.reset();
-    this.syncPlatforms();
     this.physics.world.once('worldstep', () => {
-      this.player.setPosition(120, GAME.GROUND_Y - 40);
-      this.player.body.setVelocity(0, 0);
-    });
-
-    this.events.on('platform-removed', (platform) => {
-      this.syncedPlatforms.delete(platform);
-      if (platform?.body) this.platformGroup.remove(platform, false, false);
+      if (this.player?.body) {
+        this.player.setPosition(120, GAME.GROUND_Y - 36);
+        this.player.body.setVelocity(0, 0);
+        this.player.body.updateFromGameObject();
+      }
     });
 
     this.cameras.main.startFollow(this.player, true, 0.12, 0.08);
@@ -92,16 +94,6 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('player', this.player);
     this.registry.set('powerups', []);
     this.registry.set('leaderboard', this.leaderboard.get());
-  }
-
-  syncPlatforms() {
-    this.levelGen.chunks.forEach(({ objects }) => {
-      objects.platforms.forEach((p) => {
-        if (this.syncedPlatforms.has(p)) return;
-        this.syncedPlatforms.add(p);
-        this.platformGroup.add(p);
-      });
-    });
   }
 
   getInput() {
@@ -145,7 +137,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.levelGen.update(this.player.x, this.stats.level);
-    this.syncPlatforms();
     this.levelGen.updatePlatforms(time, delta);
     updateCoins(this, this.player, delta);
     updateHazards(this, delta);
@@ -190,8 +181,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   restart() {
+    this.events.off('platform-removed');
     this.scene.stop('UIScene');
     this.scene.start('GameScene');
     this.scene.launch('UIScene');
+  }
+
+  shutdown() {
+    this.events.off('platform-removed');
   }
 }

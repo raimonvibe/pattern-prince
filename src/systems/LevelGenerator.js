@@ -5,7 +5,7 @@ export class LevelGenerator {
     this.scene = scene;
     this.chunks = new Map();
     this.lastX = 0;
-    this.lastPlatform = { x: 0, y: GAME.HEIGHT - 80, w: 200, h: 20 };
+    this.lastPlatform = { x: 0, y: GAME.GROUND_Y, w: 200, h: 20 };
     this.rng = Phaser.Math.RND;
     this.maxJumpH = 140;
     this.maxJumpW = 220;
@@ -14,7 +14,7 @@ export class LevelGenerator {
   reset() {
     this.chunks.clear();
     this.lastX = 0;
-    this.lastPlatform = { x: 0, y: GAME.HEIGHT - 80, w: 240, h: 20 };
+    this.lastPlatform = { x: 0, y: GAME.GROUND_Y, w: GAME.CHUNK_WIDTH, h: GAME.GROUND_HEIGHT };
     this.spawnChunk(0);
   }
 
@@ -38,9 +38,9 @@ export class LevelGenerator {
     const startX = index * GAME.CHUNK_WIDTH;
     const objects = { platforms: [], coins: [], enemies: [], hazards: [], chests: [] };
 
-    // Every chunk gets a full-width ground floor so gravity always has something to land on.
-    const ground = this.makeGroundFloor(startX, GAME.GROUND_Y, GAME.CHUNK_WIDTH, group);
+    const ground = this.makeGroundFloor(startX, GAME.GROUND_Y, GAME.CHUNK_WIDTH);
     objects.platforms.push(ground);
+    group.add(ground);
 
     if (index === 0) {
       this.lastPlatform = { x: startX, y: GAME.GROUND_Y, w: GAME.CHUNK_WIDTH, h: GAME.GROUND_HEIGHT };
@@ -66,8 +66,9 @@ export class LevelGenerator {
       const types = ['stone', 'stone', 'crystal', 'corrupted', 'moving', 'disappearing'];
       const type = types[Phaser.Math.Between(0, Math.min(types.length - 1, 1 + Math.floor(difficulty / 3)))];
 
-      const plat = this.makePlatform(px, py, pw, type, group);
+      const plat = this.makePlatform(px, py, pw, type);
       objects.platforms.push(plat);
+      group.add(plat);
 
       if (this.rng.frac() < 0.55 + difficulty * 0.02) {
         objects.coins.push(this.scene.spawnCoin?.(px + pw * 0.5, py - 30, this.pickCoinType(difficulty), group));
@@ -91,36 +92,42 @@ export class LevelGenerator {
       objects.hazards.push(this.scene.spawnHazard?.(fx, GAME.GROUND_Y - 12, 'fire', group));
     }
 
-    this.chunks.set(index, { group, objects, destroy: () => group.clear(true, true) });
+    this.chunks.set(index, {
+      group,
+      objects,
+      destroy: () => {
+        group.getChildren().forEach((child) => {
+          if (!child?.isGround && !objects.platforms.includes(child)) child.destroy();
+        });
+      },
+    });
     this.lastX = Math.max(this.lastX, x);
   }
 
-  makeGroundFloor(x, y, w, group) {
-    const sprite = this.scene.add.image(x, y, 'platform-stone');
-    sprite.setOrigin(0, 0);
+  makeGroundFloor(x, y, w) {
+    const cx = x + w / 2;
+    const cy = y + GAME.GROUND_HEIGHT / 2;
+    const sprite = this.scene.platformGroup.create(cx, cy, 'platform-stone');
     sprite.setDisplaySize(w, GAME.GROUND_HEIGHT);
     sprite.setTint(0x888899);
-    this.scene.physics.add.existing(sprite, true);
-    sprite.body.setSize(w, GAME.GROUND_HEIGHT);
     sprite.refreshBody();
     sprite.isGround = true;
     sprite.platformType = 'ground';
-    group.add(sprite);
+    sprite.setDepth(1);
     return sprite;
   }
 
-  makePlatform(x, y, w, type, group) {
-    const sprite = this.scene.add.image(x, y, `platform-${type}`);
-    sprite.setOrigin(0, 0);
+  makePlatform(x, y, w, type) {
+    const cx = x + w / 2;
+    const cy = y + 10;
+    const sprite = this.scene.platformGroup.create(cx, cy, `platform-${type}`);
     sprite.setDisplaySize(w, 20);
-    this.scene.physics.add.existing(sprite, true);
-    sprite.body.setSize(w, 20);
     sprite.refreshBody();
     sprite.platformType = type;
-    sprite.startX = x + w / 2;
+    sprite.startX = cx;
     sprite.moveRange = type === 'moving' ? 60 : 0;
     sprite.disappearTimer = type === 'disappearing' ? 0 : null;
-    group.add(sprite);
+    sprite.setDepth(2);
     return sprite;
   }
 
@@ -146,9 +153,10 @@ export class LevelGenerator {
   updatePlatforms(time, delta) {
     this.chunks.forEach(({ objects }) => {
       objects.platforms.forEach((p) => {
+        if (!p?.active || !p.body) return;
         if (p.moveRange) {
-          p.x = p.startX - p.displayWidth / 2 + Math.sin(time / 500) * p.moveRange;
-          p.body.updateFromGameObject();
+          p.x = p.startX + Math.sin(time / 500) * p.moveRange;
+          p.refreshBody();
         }
         if (p.disappearTimer !== null) {
           p.disappearTimer += delta;

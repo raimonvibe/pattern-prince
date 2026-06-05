@@ -78,6 +78,7 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   applyLayout() {
+    if (!this.sys?.isActive() || !this.title?.active) return;
     const L = getLayout(this);
     const mobile = L.mobile;
     const cx = L.w / 2;

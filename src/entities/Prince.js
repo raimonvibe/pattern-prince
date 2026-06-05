@@ -20,7 +20,9 @@ export class Prince extends Phaser.Physics.Arcade.Sprite {
     this.lastGroundTime = 0;
     this.coyoteMs = 120;
     this.play('prince-idle');
-    this.healthBar = scene.add.graphics().setDepth(20);
+    this.setScale(2);
+    this.setDepth(20);
+    this.healthBar = scene.add.graphics().setDepth(25);
   }
 
   update(input, delta) {

@@ -32,6 +32,7 @@ export class HUD {
   }
 
   layout() {
+    if (!this.scene?.sys?.isActive() || !this.hpBg?.active) return;
     const L = getLayout(this.scene);
     const h = L.hud;
     const fs = L.mobile ? 11 : 16;
